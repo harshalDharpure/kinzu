@@ -1,36 +1,33 @@
 # Use Node.js 20 slim as the base image
 FROM node:20-slim
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Install system dependencies: ffmpeg, Python 3.11, pip, venv
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y ffmpeg python3.11 python3.11-venv python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy only package files and requirements first for better caching
-COPY kizunaback/package*.json ./kizunaback/
-COPY kizunaback/requirements.txt ./kizunaback/
+# Copy dependency definition files from the kizunaback directory
+COPY kizunaback/package*.json ./
+COPY kizunaback/requirements.txt ./
 
 # Install Node.js dependencies
-RUN cd kizunaback && npm install
+RUN npm install
 
-# Create and activate a Python virtual environment
-RUN python3.11 -m venv /app/venv
+# Set up Python virtual environment
+RUN python3.11 -m venv venv
 ENV PATH="/app/venv/bin:$PATH"
 
 # Install Python dependencies
-RUN pip install --upgrade pip && pip install -r kizunaback/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your backend code
-COPY kizunaback/ ./kizunaback/
+# Copy the entire backend source code
+COPY kizunaback/ .
 
-# Set working directory to backend
-WORKDIR /app/kizunaback
-
-# Expose the port your app runs on
+# Expose the application port
 EXPOSE 5000
 
-# Start the server
-CMD ["npm", "start"] 
+# The command to run the application
+CMD [ "npm", "start" ] 
